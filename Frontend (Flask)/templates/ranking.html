@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block menuitem %}
+<li><a href="/" accesskey="1" title="">Featured</a></li>
+<li class="current_page_item"><a href="/ranking" accesskey="3" title="">Top TV shows</a></li>
+{% endblock %}
+
+
+{% block main %}
+<div id="featured">
+    <div class="title main-content">
+        <h2>Most Popular TV Shows</h2>
+        <span class="byline">Log in to rate your favorite titles. Leave feedback on Most Popular TV Shows </span>
+    </div>
+    <ul class="style1">
+
+    {% for i in range(0,100) %}
+    <li>
+        <p class="ranking"><a href="#"><b>{{ i+1 }}</b></a></p>
+        <h3><a href="/tv?title={{TV_list[i]['title']}}">{{ TV_list[i]['title'] }}</a></h3>
+        <p>{{ TV_list[i]['description'][:220] + " ..." }}</p>
+    </li>
+    {% endfor %}
+    </ul>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block main %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/header_panel.css') }}">
+
+<div class="content">
+    <h4>Description</h4>
+
+    <div class="row ">
+        <div class="large-4 columns">
+            <a href="#"> <span> </span><img src="static/img/{{tvinfo['imdb_data']['poster']}}" alt="book cover" class=" thumbnail"></a>
+        </div>
+        <div class="large-8 columns">
+            <div class="row">
+                <div class=" large-9 columns">
+                    <h2>{{ tvinfo['title'] }} </h2>
+                    <h5><a href="#"> {{ tvinfo['description'][:200] }} </a></h5>
+                </div>
+                <!--div class=" large-3 columns">
+                    <a href="#"  class="button  expand medium"><span>Open Book</span> </a>
+                    <a href="#"  class="button  expand medium"><span>Add to List</span></a>
+                </div-->
+                <div class="row">
+                    <div class=" large-6 columns">
+                        <ul class="large-block-grid-2">
+                            <li><strong>Company: </strong>{{ tvinfo['imdb_data']['company'] }} </li>
+                            <li><strong>Genres: </strong>{{ " ".join( tvinfo['imdb_data']['genres'] )  }}</li>
+                            <li><strong>Tagline: </strong> {{ tvinfo['imdb_data']['tagline']}}</li>
+                        </ul>
+                    </div>
+                    <div class=" large-6 columns">
+                        <ul class="large-block-grid-2">
+                            <li><strong>Release Date: </strong> {{ tvinfo['imdb_data']['release_date'] }} </li>
+                            <li><strong>Rating: </strong> {{ tvinfo['imdb_data']['rating'] }} ({{ tvinfo['imdb_data']['votes'] }}) </li>
+                            <ul><strong> <a href="{{ tvinfo['imdb_data']['url'] }}"> More info </a> </strong> </ul>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <hr> -->
+    </div>
+</div>
+
+
+<ul class="tabs" data-tabs id="example-tabs">
+    <li class="tabs-title is-active"><a href="#panel2">How Do People Feel</a></li>
+    <li class="tabs-title"><a href="#panel1" aria-selected="true">What People Say</a></li>
+    <li class="tabs-title"><a href="#panel3" >Tweet Heatmap</a></li>
+</ul>
+<div class="tabs-content" data-tabs-content="example-tabs">
+    <div class="tabs-panel is-active" id="panel2"  style="width: 100%; height: 30em;">
+      <!-- <div><text fill="#222222" stroke-width="0" stroke="none" font-size="14" font-family="Arial" y="107.9" x="561" text-anchor="start">Work</text></div> -->
+    </div>
+    <div class="tabs-panel" id="panel1">
+      <div class="content">
+          {% set length = tvinfo['tweets']|length if (tvinfo['tweets']|length) < 20 else 20 %}
+          {% for i in range(0,length) %}
+          <article class="article">
+              <img alt="person" class="author" src="http://placeimg.com/46/46/people">
+              <p class="subheader"><a href="#">{{ tvinfo['tweets'][i]['_source']['user']['name'] }}</a>
+                  under <a href="#"> <span class="label">Tweet</span></a> <a href="#"><span class="alert label">Like</span></a>
+              </p>
+              <p>{{ tvinfo['tweets'][i]['_source']['text'] }}</p>
+              <!-- <a href="#" class="ghost button">Comment &rarrlp;</a> -->
+          </article>
+          {% endfor %}
+      </div>
+    </div>
+    <div class="tabs-panel" id="panel3" style="width: 100%; height:400px; position: static"></div>
+</div>
+
+{% endblock %}
+
+
+{% block head_script %}
+{% endblock %}
+
+{% block more_script %}
+
+<!-- get sentiment data by genre and initMap -->
+<script type="text/javascript">
+var genre = "{{tvinfo['imdb_data']['genres'][0]}}";
+var tv_name = "{{tvinfo['title'] }}";
+</script>
+<script async type="text/javascript" src="{{url_for('static', filename='js/map.js')}}"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDDhmjEizB3PyRpcPrKCaqg6ugtJJlFIw8&libraries=visualization&callback=initMap"></script>
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+// ----------- resize google map  ------------
+
+// [jQuery - Fire event if CSS class changed - Stack Overflow](http://stackoverflow.com/questions/1950038)
+(function(){
+    // Your base, I'm in it!
+    var originalAddClassMethod = jQuery.fn.addClass;
+    jQuery.fn.addClass = function(){
+        // Execute the original method.
+        var result = originalAddClassMethod.apply( this, arguments );
+        // trigger a custom event
+        jQuery(this).trigger('cssClassChanged');
+        // return the original result
+        return result;
+    }
+})();
+$(function(){
+    $("#panel3").bind('cssClassChanged', function(){
+        // [javascript - Embed google map is wrong displayed until resizing webpage - Stack Overflow](http://stackoverflow.com/questions/19003291)
+        google.maps.event.trigger(map, 'resize');
+        map.panTo(mapcenter);
+    });
+});
+
+
+// ----------- pie chart ------------
+// [The Amazing Pie - bl.ocks.org](http://bl.ocks.org/mbostock/4341574)
+// [Arc Tween - bl.ocks.org](http://bl.ocks.org/mbostock/5100636)
+function drawPieChart(){
+
+    var width = $("#example-tabs").width(),
+        height =  $("#panel2").height(),
+        radius = Math.min(width, height) / 2 - 10;
+
+    var data = [{{sentiment.neg}}, {{sentiment.neu}}, {{sentiment.pos}}];
+    var legend = ["negative", "neutral", "positive" ];
+
+    var color = ["lightblue", "yellow", "pink"];
+
+    var arc = d3.svg.arc()
+        .outerRadius(radius);
+
+    var pie = d3.layout.pie();
+
+    var svg = d3.select("#panel2").append("svg")
+        .datum(data)
+        .attr("width", width)
+        .attr("height", height)
+      .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    var arcs = svg.selectAll("g.arc")
+        .data(pie)
+      .enter().append("g")
+        .attr("class", "arc")
+        .attr("data-legend",function(d, i) { return legend[i]});
+
+    arcs.append("path")
+        .attr("fill", function(d, i) { return color[i]; })
+      .transition()
+        .ease("bounce")
+        .duration(2000)
+        .attrTween("d", tweenPie)
+      .transition()
+        .ease("elastic")
+        .delay(function(d, i) { return 2000 + i * 50; })
+        .duration(750)
+        .attrTween("d", tweenDonut);
+
+    function tweenPie(b) {
+      b.innerRadius = 0;
+      var i = d3.interpolate({startAngle: 0, endAngle: 0}, b);
+      return function(t) { return arc(i(t)); };
+    }
+
+    function tweenDonut(b) {
+      b.innerRadius = radius * .6;
+      var i = d3.interpolate({innerRadius: 0}, b);
+      return function(t) { return arc(i(t)); };
+    }
+
+    var legend = svg.append("g")
+          .attr("class","legend")
+          .attr("transform","translate(50,30)")
+          .style("font-size","12px")
+          .call(d3.legend);
+
+}
+drawPieChart();
+
+</script>
+
+
+{#
+<!-- the google chart cannot always display normally, so I switch to D3.js -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script defer type="text/javascript">
+setTimeout(function(){
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+}, 2500);
+
+// $(window).load(function() { });
+
+function drawChart() {
+  var data = google.visualization.arrayToDataTable([
+      ['Sentimental type', 'Percentage'],
+      ['Negative', {{sentiment.neg}} ],
+      ['Positive', {{sentiment.pos}}],
+      ['Neutral',  {{sentiment.neu}}]
+  ]);
+  var chart = new google.visualization.PieChart(document.getElementById('panel2'));
+  chart.draw(data);
+}
+</script>
+
+<script type="text/javascript" ></script>
+#}
+
+{% endblock %}

@@ -1,0 +1,185 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>TweetMap</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+
+<script src='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:50px; bottom:0; right: 20px; width:80%; }
+  #header { position:absolute; top:10px; bottom:0; right: 20px; width:50%; }
+  #select_box { padding-left: 20px; width:15%; }
+  .info_box { padding-left: 20px; width:15%;}
+  p {padding-left: 10px;}
+</style>
+</head>
+<body>
+<div id="parent">
+
+    <div class="info_box">
+        <p>Make a choice in the box to update map</p>
+    </div>
+    <div id="select_box">
+    <select id="choice_box" onchange="updateMap()">
+      <option value="Trump">Trump</option>
+      <option value="Cruz">Cruz</option>
+      <option value="Rubio">Rubio</option>
+      <option value="Clinton">Clinton</option>
+        <option value="Sanders">Sanders</option>
+      <option value="Kasich">Kasich</option>
+      <option value="Obama">Obama</option>
+      <option value="Bush">Bush</option>
+        <option value="Java">Java</option>
+        <option value="Python">Python</option>
+        <option value="Machine Learning">Machine Learning</option>
+    </select>
+        <select id="distance_choice_box" hidden>
+      <option value="1000km" selected>1000km</option>
+      <option value="10000km">10000km</option>
+      <option value="100km">100km</option>
+      <option value="10km">10km</option>
+        <option value="100000km">100000km</option>
+    </select>
+</div>
+
+    <div class="info_box" style="width:15%">
+        <p>Search by Term or by Distance</p>
+        <input type="radio" name="selection" onclick="handleClick(this);" value="Term" checked> Term<br>
+        <input type="radio" name="selection" onclick="handleClick(this);" value="Distance"> Distance<br>
+        <p id="distance_help" hidden>Click on map to see tweets within distance</p>
+    </div>
+
+<div class="info_box">
+    <p id="currentSelection"></p>
+</div>
+
+</div>
+
+
+<div id="header">Click on a pin to see the Tweet text</div>
+<div id='map'></div>
+
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoiamptMjIxMiIsImEiOiJjaWxmY2QycGsxcXpodmZtYzhrYXR0Z3FrIn0.-6Kj60MQN1uavTi3mGHENg';
+// Replace 'mapbox.streets' with your map id.
+var mapboxTiles = L.tileLayer('https://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=' + L.mapbox.accessToken, {
+    attribution: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+});
+var markers = [];
+function updateMap(){
+    var candidate = $('#choice_box').find(":selected").text();
+    console.log(candidate);
+
+    var mark;
+    for (var i=0; i<markers.length; i++){
+        map.removeLayer(markers[i])
+    }
+    markers = [];
+    $.get('/get_tweets/', {query: candidate}, function(data){
+        values = JSON.parse(data);
+        var x;
+        console.log(values[0]);
+
+        for (i=0; i<values.length; i++){
+            x = values[i];
+            var marker = L.marker(x._source.coordinates.reverse()).addTo(map);
+            var date = new Date(x._source.timestamp_ms*1000);
+            // Hours part from the timestamp
+            var hours = date.getHours();
+            // Minutes part from the timestamp
+            var minutes = "0" + date.getMinutes();
+            // Seconds part from the timestamp
+            var seconds = "0" + date.getSeconds();
+
+            // Will display time in 10:30:23 format
+            var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            var text = "<p><b>Text:</b> " + x._source.text + "</p><b>User:</b> " + x._source.user.name + "\n<b>Posted:</b> " + date;
+            marker.bindPopup(text);
+            markers.push(marker);
+
+        }
+        $("#currentSelection").text(candidate + " currently selected with " + markers.length + " tweets about them");
+        console.log(markers.length);
+});
+
+}
+
+var map = L.map('map')
+    .addLayer(mapboxTiles)
+    .setView([39.5, -98.35], 4);
+
+updateMap();
+function onMapClick(e) {
+    if (currentValue === "Term") {
+        return
+    }
+    console.log(e.latlng.lat);
+    var x = [e.latlng.lat, e.latlng.lng];
+    var mark;
+    for (var i=0; i<markers.length; i++){
+        map.removeLayer(markers[i])
+    }
+    markers = [];
+    distance = $("#distance_choice_box").val();
+    $.get('/get_tweets_distance/', {query: JSON.stringify(x), distance: distance}, function (data) {
+        values = JSON.parse(data);
+        var x;
+        console.log(values[0]);
+
+        for (i = 0; i < values.length; i++) {
+            x = values[i];
+            var marker = L.marker(x._source.coordinates.reverse()).addTo(map);
+            var date = new Date(x._source.timestamp_ms * 1000);
+            // Hours part from the timestamp
+            var hours = date.getHours();
+            // Minutes part from the timestamp
+            var minutes = "0" + date.getMinutes();
+            // Seconds part from the timestamp
+            var seconds = "0" + date.getSeconds();
+
+            // Will display time in 10:30:23 format
+            var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            var text = "<p><b>Text:</b> " + x._source.text + "</p><b>User:</b> " + x._source.user.name + "\n<b>Posted:</b> " + date;
+            marker.bindPopup(text);
+            markers.push(marker);
+
+        }
+        $("#currentSelection").text("Distance of: " + distance + " currently selected with " + markers.length + " tweets in that range");
+    });
+}
+
+map.on('click', onMapClick);
+
+var currentValue = "Term";
+function handleClick(myRadio) {
+    if(myRadio.value === "Distance"){
+        $("#choice_box").hide();
+        $("#distance_choice_box").show();
+        for (var i=0; i<markers.length; i++){
+            map.removeLayer(markers[i])
+        }
+        markers = [];
+        $("#distance_help").show();
+    }else {
+        $("#choice_box").show();
+        $("#distance_choice_box").hide();
+         $("#distance_help").hide();
+        updateMap();
+    }
+    currentValue = myRadio.value;
+
+
+}
+</script>
+
+<script>
+
+</script>
+</body>
+</html>

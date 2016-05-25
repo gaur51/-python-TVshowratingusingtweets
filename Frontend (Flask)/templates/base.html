@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}TV Ranking{% endblock %} </title>
+    <link href="static/css/lib/foundation.css" rel="stylesheet" />
+    <link href='http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css' rel='stylesheet' type='text/css'>
+    <link href="static/css/main.css" rel="stylesheet" />
+    {% block head_script %}{% endblock %}
+</head>
+
+<body>
+
+<div class="row full">
+
+    <!-- modal content -->
+    <div id="myModal" class="reveal" data-reveal aria-labelledby="login or sign up" aria-hidden="true" role="dialog">
+        <div class="row">
+            <div class="large-6 columns auth-plain">
+                <div class="signup-panel left-solid">
+                    <!-- <p class="welcome">Registered Users</p> -->
+                    <p></p>
+                    <form>
+                        <div class="row collapse">
+                            <div class="small-2  columns">
+                                <span class="prefix"><i class="fi-torso-female"></i></span>
+                            </div>
+                            <div class="small-10  columns">
+                                <input type="text" placeholder="username" id="username">
+                            </div>
+                        </div>
+                        <div class="row collapse">
+                            <div class="small-2 columns ">
+                                <span class="prefix"><i class="fi-lock"></i></span>
+                            </div>
+                            <div class="small-10 columns ">
+                                <input type="text" placeholder="password" id="password">
+                            </div>
+                        </div>
+                    </form>
+                    <a href="javascript:login();" class="button ">Log In </a>
+                    <a href="#" class="button ">Sign Up</a><br/>
+                </div>
+            </div>
+            <div class="large-6 columns auth-plain">
+                <div class="signup-panel newusers">
+                    <p class="welcome"> New User?</p>
+                    <p>By creating an account with us, you will be able to bookmark your favorite TV shows, view and get recommendations and more.</p><br>
+                    <!-- <a href="#" class="button ">Sign Up</a></br> -->
+                </div>
+            </div>
+        </div>
+        <a class="close-button" data-close aria-label="Close modal">
+            <!--<span aria-hidden="true">&times;</span>-->
+            &#215;
+        </a>
+    </div>
+
+
+    <div class="sidebar medium-12 large-3 columns">
+        <div class="profile" id="logout">
+            <img src="static/img/rating-pink-256.png" alt="" />
+            <h1 id="user"><a href="#">SocialTVRating</a></h1>
+            <a href="#" class="button ghost" data-open="myModal">SignUp</a>
+            <a href="#" class="button ghost" data-open="myModal">Login</a>
+        </div>
+
+        <div id="menu">
+            <ul>
+                {% block menuitem%}
+                <li class="current_page_item"><a href="/" accesskey="1" title="">Featured</a></li>
+                <li><a href="/ranking" accesskey="3" title="">Top TV shows</a></li>
+                {% endblock %}
+            </ul>
+        </div>
+
+        <form class="has-form">
+            <div class="row collapse">
+                <div class="large-8 small-9 columns">
+                    <input type="text" id="searchbox" name="genre" placeholder="Find By Genre" data-toggle-focus="form-callout" ></input>
+                </div>
+                <div class="large-4 small-3 columns">
+                    <!-- <input  type="submit" value="submit" onclick="return foo();" ></input> -->
+                    <a href="javascript:callsearchbox();" class="button expand" >Search</a>
+                </div>
+            </div>
+            <div class="is-hidden" id="form-callout" data-toggler="is-hidden">
+                <span class="warning tiny button">Sci-Fi</span>
+                <span class="alert large button">Comedy</span>
+                <span class="secondary small button">Fantasy</span>
+            </div>
+        </form>
+
+        <div class="social-header">
+            <a href="#"><i class="fi-social-facebook"></i></a>
+            <a href="#"><i class="fi-social-medium"></i></a>
+            <a href="#"><i class="fi-social-rdio"></i></a>
+        </div>
+    </div>
+
+    <div id="main" class="medium-12 large-9 columns">
+        {% block main %}
+        {% endblock %}
+    </div>
+</div>
+<script src="static/js/lib/vendor.js"></script>
+<script src="static/js/lib/foundation.js"></script>
+<!--<script src="assets/js/docs.js"></script>-->
+<script>
+    $(function(){
+        $(document).foundation();
+    });
+</script>
+<script>
+    $(document).ready(function(){});
+
+// this is for button only
+function callsearchbox(){
+    var genre = $("#searchbox").val();
+    location.href = "/search?genre="+genre;
+}
+
+function login(){
+    var password = $("#password").val() || "1234",
+        username = $("#username").val() || "guest";
+    $.post(
+        "http://finalproject-dev.us-west-2.elasticbeanstalk.com/login_user/",
+        { "password": password, "username": username },
+        function(data) {
+            console.log(data);
+        },
+        "jsonp"
+    );
+    location.href = "/";
+}
+
+function getusersession(){
+    $.get(
+        "http://finalproject-dev.us-west-2.elasticbeanstalk.com/get_username/",
+        function(data) {
+            var title = data.username;
+            if (title)
+                $("#user").text("a")
+        }
+    );
+}
+
+getusersession();
+
+</script>
+
+{% block more_script %}{% endblock %}
+
+</body>
+</html>

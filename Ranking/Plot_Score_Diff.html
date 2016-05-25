@@ -1,0 +1,37 @@
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+       <div id="chart_div" style="width: 900px; height: 500px;"></div>
+<script type="text/javascript">
+     google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawVisualization);
+
+
+      function drawVisualization() {
+        // Some raw data (not necessarily accurate)
+        var data = google.visualization.arrayToDataTable([
+         ['TV show', 'Social score', 'IMDB score', 'Average'],
+         ['1. The Walking Dead',  9.54551451399, 8.6, 9.07275725699],
+         ['2. Game of Thrones', 9.45739686137, 9.5, 9.47869843068],
+         ['3. Breaking Bad', 9.34090936308, 9.5, 9.42045468154],
+         ['4. How I Met Your Mother', 8.93600272908, 8.4, 8.66800136454],
+         ['5. The Big Bang Theory', 8.89898014663, 8.4, 8.64949007331],
+         ['6. The Office', 8.82330717841, 8.8, 8.81165358921],
+         ['7. Orange Is the New Black', 8.64425589981, 8.3, 8.4721279499],
+         ['8. House of Cards', 8.60636932846, 9.0, 8.80318466423],
+         ['9. Friends', 8.54485438558, 9.0, 8.77242719279],
+         ['10. Brooklyn Nine-Nine', 8.51215274495, 8.3, 8.40607637247],
+         [' ', 0, 0, 8.40607637247]
+      ]);
+
+    var options = {
+      title : 'Social TV score vs. IMDB score\n Average Score difference: 5.19%',
+      vAxis: {title: 'Ranking score'},
+      hAxis: {title: 'TV show'},
+      seriesType: 'bars',
+      series: {2: {type: 'line'}}
+    };
+
+    var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+    chart.draw(data, options);
+  }
+</script>
+   
